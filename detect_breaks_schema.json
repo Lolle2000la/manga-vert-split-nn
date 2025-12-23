@@ -1,0 +1,105 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Page Break Detection Output",
+    "description": "Output format for the page break detection CLI script.",
+    "type": "object",
+    "properties": {
+        "image": {
+            "type": "string",
+            "description": "Path to the input image file."
+        },
+        "original_height": {
+            "type": "integer",
+            "description": "Height of the original image in pixels."
+        },
+        "original_width": {
+            "type": "integer",
+            "description": "Width of the original image in pixels."
+        },
+        "resized_height": {
+            "type": "integer",
+            "description": "Height of the image after resizing for the model."
+        },
+        "scale_factor": {
+            "type": "number",
+            "description": "Scaling factor applied to the original image (target_width / original_width)."
+        },
+        "parameters": {
+            "type": "object",
+            "description": "Configuration parameters used for detection.",
+            "properties": {
+                "peak_height": {
+                    "type": "number",
+                    "description": "Minimum height threshold for a peak (0.0-1.0)."
+                },
+                "peak_distance": {
+                    "type": "integer",
+                    "description": "Minimum distance between peaks in pixels (resized coordinates)."
+                },
+                "smoothing_sigma": {
+                    "type": "number",
+                    "description": "Sigma value used for Gaussian smoothing."
+                },
+                "peak_prominence": {
+                    "type": "number",
+                    "description": "Minimum prominence of peaks."
+                },
+                "edge_margin": {
+                    "type": "integer",
+                    "description": "Margin in pixels from top/bottom where splits are ignored (resized coordinates)."
+                }
+            },
+            "required": [
+                "peak_height",
+                "peak_distance",
+                "smoothing_sigma",
+                "peak_prominence",
+                "edge_margin"
+            ]
+        },
+        "splits": {
+            "type": "array",
+            "description": "List of detected page breaks.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "y_resized": {
+                        "type": "integer",
+                        "description": "Y-coordinate of the split in the resized image."
+                    },
+                    "y_original": {
+                        "type": "integer",
+                        "description": "Y-coordinate of the split in the original image."
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "description": "Confidence score (probability) of the split."
+                    }
+                },
+                "required": [
+                    "y_resized",
+                    "y_original",
+                    "confidence"
+                ]
+            }
+        },
+        "count": {
+            "type": "integer",
+            "description": "Total number of splits detected."
+        },
+        "error": {
+            "type": "string",
+            "description": "Error message if the operation failed. If present, other fields may be missing."
+        }
+    },
+    "required": [
+        "image",
+        "original_height",
+        "original_width",
+        "resized_height",
+        "scale_factor",
+        "parameters",
+        "splits",
+        "count"
+    ]
+}

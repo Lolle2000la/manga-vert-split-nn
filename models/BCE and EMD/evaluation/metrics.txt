@@ -1,0 +1,7 @@
+       Test metric             DataLoader 0
+─────────────────────────────────────────────
+test_val_avg_pixel_error    0.46447139978408813
+       test_val_f1          0.8046714067459106
+   test_val_precision       0.7431975603103638
+     test_val_recall        0.8772329688072205
+    test_val_soft_f1        0.7922135591506958

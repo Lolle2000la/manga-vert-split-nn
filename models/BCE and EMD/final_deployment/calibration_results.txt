@@ -1,0 +1,9 @@
+=== CALIBRATION COMPLETE ===
+Best Soft F-0.5: 0.9489
+Best Params: {'peak_height': 0.5707228974439204, 'peak_distance': 1000, 'smoothing_sigma': 4.731997046619655}
+
+with the new parameter 'peak_prominence' added:
+
+=== CALIBRATION COMPLETE ===
+Best Soft F-0.5: 0.9489
+Best Params: {'peak_height': 0.6696299115258892, 'peak_distance': 721, 'smoothing_sigma': 3.705597997914766, 'peak_prominence': 0.6569709811690929}

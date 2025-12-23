@@ -1,0 +1,3 @@
+Please check MLFlow (https://mlflow.nas.rourunisen.dev/#/experiments/17/runs/31ff28744cf947ed9cbfe041b1bcb709/model-metrics) for the actual metrics of the final model, as the last epochs metrics were saved, not the best ones.
+
+The model itself IS the best model.

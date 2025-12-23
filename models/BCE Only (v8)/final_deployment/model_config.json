@@ -1,0 +1,13 @@
+{
+    "input_channels": 3,
+    "hidden_dim": 80,
+    "layers": 10,
+    "kernel_size": 3,
+    "dropout": 0.025146728589025193,
+    "activation": "ReLU",
+    "width_stride": 2,
+    "peak_height": 0.6,
+    "peak_distance": 800,
+    "smoothing_sigma": 2.5,
+    "peak_prominence": 0.45
+}

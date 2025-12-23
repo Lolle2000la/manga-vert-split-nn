@@ -1,0 +1,7 @@
+venv/
+dataset_strips/
+lightning_logs/
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
