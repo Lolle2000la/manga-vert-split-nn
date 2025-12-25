@@ -10,6 +10,29 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def get_optimal_device() -> torch.device:
+    """
+    Returns the best available device for inference.
+    Prioritizes torch.accelerator > CUDA > ROCm (via CUDA) > MPS > XPU > CPU.
+    """
+    if hasattr(torch, "accelerator") and torch.accelerator.is_available():
+        device = torch.accelerator.current_accelerator()
+        if device is not None:
+            return device
+
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    
+    # Check for MPS (Apple Silicon)
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return torch.device("mps")
+        
+    # Check for XPU (Intel)
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
+        return torch.device("xpu")
+        
+    return torch.device("cpu")
+
 def gaussian_smooth(waveform: torch.Tensor, sigma: float) -> torch.Tensor:
     """
     1D Gaussian smoothing compatible with ONNX.

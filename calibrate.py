@@ -18,7 +18,7 @@ import torch
 from optuna.samplers import GPSampler
 from tqdm import tqdm
 
-from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch
+from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch, get_optimal_device
 from page_break_trainer import StripDataset, DataLoader, collate_variable_height
 
 
@@ -102,7 +102,7 @@ def calculate_soft_fbeta(
     return f_beta
 
 # --- CACHE STEP ---
-def load_standalone_model(checkpoint_path: str, config_path: Optional[str] = None) -> DeepPageBreakDetector:
+def load_standalone_model(checkpoint_path: str, config_path: Optional[str] = None) -> Tuple[DeepPageBreakDetector, torch.device]:
     """
     Loads the model from a checkpoint and config file.
 
@@ -111,7 +111,7 @@ def load_standalone_model(checkpoint_path: str, config_path: Optional[str] = Non
         config_path: Path to the model config (.json). If None, looks in the same directory as checkpoint.
 
     Returns:
-        The loaded DeepPageBreakDetector model.
+        The loaded DeepPageBreakDetector model and the device it's on.
     """
     if config_path is None:
         config_path = os.path.join(os.path.dirname(checkpoint_path), "model_config.json")
@@ -124,7 +124,8 @@ def load_standalone_model(checkpoint_path: str, config_path: Optional[str] = Non
         
     model = DeepPageBreakDetector(**config)
     
-    state_dict = torch.load(checkpoint_path, map_location='cuda')
+    device = get_optimal_device()
+    state_dict = torch.load(checkpoint_path, map_location=device)
     
     state_dict_keys = list(state_dict.keys())
     if state_dict_keys and all(k.startswith("model.") for k in state_dict_keys):
@@ -132,11 +133,11 @@ def load_standalone_model(checkpoint_path: str, config_path: Optional[str] = Non
         state_dict = {k[prefix_len:]: v for k, v in state_dict.items()}
         
     model.load_state_dict(state_dict)
-    model.eval().cuda()
-    return model
+    model.eval().to(device)
+    return model, device
 
 def cache_predictions(args):
-    model = load_standalone_model(args.checkpoint, args.config)
+    model, device = load_standalone_model(args.checkpoint, args.config)
     
     ds = StripDataset(args.data_dir, crop_height=None, augment=False)
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=collate_variable_height)
@@ -148,7 +149,7 @@ def cache_predictions(args):
     
     with torch.no_grad():
         for x, y in tqdm(dl):
-            x = x.cuda()
+            x = x.to(device)
             logits = model(x)
             probs = torch.sigmoid(logits).cpu()
             

@@ -26,7 +26,7 @@ from PIL import Image
 sys.path.append(os.getcwd())
 
 try:
-    from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch
+    from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch, get_optimal_device
 except ImportError:
     print("Error: Could not import 'page_break_model'. Make sure you are in the project root.")
     sys.exit(1)
@@ -110,7 +110,7 @@ class PageBreakVisualizerApp:
         self.root.geometry("1200x900")
 
         self.model: Optional[DeepPageBreakDetector] = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = get_optimal_device()
         self.current_image_path = None
         self.original_image = None  # PIL Image
         self.processed_tensor = None # Tensor (1, C, H, W)
@@ -311,7 +311,15 @@ class PageBreakVisualizerApp:
         if self.processed_tensor is not None:
             del self.processed_tensor
             self.processed_tensor = None
-        torch.cuda.empty_cache()
+        
+        if hasattr(torch, "accelerator") and torch.accelerator.is_available():
+            torch.accelerator.empty_cache()
+        elif torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif hasattr(torch, "xpu") and torch.xpu.is_available():
+            torch.xpu.empty_cache()
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            torch.mps.empty_cache()
 
         file_path = filedialog.askopenfilename(
             title="Select Image",

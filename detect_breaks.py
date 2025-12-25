@@ -18,12 +18,12 @@ from PIL import Image
 sys.path.append(os.getcwd())
 
 try:
-    from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch
+    from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch, get_optimal_device
 except ImportError:
     # Fallback if running from a different directory but modules are in the same dir as script
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     try:
-        from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch
+        from page_break_model import DeepPageBreakDetector, gaussian_smooth, find_peaks_torch, get_optimal_device
     except ImportError:
         print(json.dumps({"error": "Could not import 'page_break_model'. Make sure you are in the project root or the script directory."}))
         sys.exit(1)
@@ -85,7 +85,7 @@ def main():
 
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_optimal_device()
 
     # 1. Load Config
     try:
