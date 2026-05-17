@@ -31,7 +31,6 @@ class OnnxWrapper(torch.nn.Module):
         return probs, peaks
 
 def export_model(args: argparse.Namespace) -> None:
-    # 1. Load Config
     with open(args.config, 'r') as f:
         config = json.load(f)
         
@@ -39,10 +38,8 @@ def export_model(args: argparse.Namespace) -> None:
           f"H={config.get('peak_height')}, D={config.get('peak_distance')}, "
           f"S={config.get('smoothing_sigma')}, P={config.get('peak_prominence')}")
 
-    # 2. Init Model
     model = DeepPageBreakDetector(**config)
     
-    # 3. Load Weights
     state_dict = torch.load(args.checkpoint, map_location="cpu")
     
     # Remove Lightning prefix if present
@@ -54,12 +51,10 @@ def export_model(args: argparse.Namespace) -> None:
     model.load_state_dict(state_dict)
     model.eval()
     
-    # 4. Dummy Input 
-    # (Batch size 1, 3 channels, Height 2048, Width 768)
+    # Dummy Input (Batch size 1, 3 channels, Height 2048, Width 768)
     # The height can be dynamic in ONNX, but we provide a standard shape for tracing
     x = torch.randn(1, 3, 2048, 768)
     
-    # 5. Export
     wrapper = OnnxWrapper(model)
     
     print(f"[Info] Exporting to {args.output}...")

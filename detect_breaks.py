@@ -87,7 +87,6 @@ def main():
 
     device = get_optimal_device()
 
-    # 1. Load Config
     try:
         with open(args.config, 'r') as f:
             config = json.load(f)
@@ -101,7 +100,6 @@ def main():
     smoothing_sigma = args.smoothing_sigma if args.smoothing_sigma is not None else config.get("smoothing_sigma", 1.0)
     peak_prominence = args.peak_prominence if args.peak_prominence is not None else config.get("peak_prominence", 0.1)
 
-    # 2. Load Model
     try:
         model = DeepPageBreakDetector(**config)
         state_dict = torch.load(args.checkpoint, map_location=device)
@@ -118,7 +116,6 @@ def main():
         print(json.dumps({"error": f"Failed to load model: {str(e)}"}))
         sys.exit(1)
 
-    # 3. Load and Preprocess Image
     try:
         img = Image.open(args.image).convert("RGB")
         w_orig, h_orig = img.size
@@ -135,7 +132,6 @@ def main():
         print(json.dumps({"error": f"Failed to process image: {str(e)}"}))
         sys.exit(1)
 
-    # 4. Inference
     try:
         with torch.no_grad():
             logits = predict_sliding_window(model, input_tensor)

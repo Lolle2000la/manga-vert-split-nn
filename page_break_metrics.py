@@ -23,7 +23,6 @@ class PageBreakMetrics(Metric):
         self.peak_height = peak_height
         self.peak_distance = peak_distance
 
-        # Accumulators
         self.add_state("tp", default=torch.tensor(0.0), dist_reduce_fx="sum") 
         self.add_state("fp", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("fn", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -36,10 +35,9 @@ class PageBreakMetrics(Metric):
         GPU-friendly peak detection using MaxPool1d as a dilation filter.
         Approximates scipy.signal.find_peaks(distance=...).
         """
-        # 1. Height threshold
         mask_height = x > self.peak_height
         
-        # 2. Distance suppression (approximate using MaxPool)
+        # Distance suppression (approximate using MaxPool)
         # We pad to keep dimensions same. kernel_size ~ distance.
         k = self.peak_distance
         if k % 2 == 0: k += 1 # Ensure odd for symmetric padding
@@ -61,14 +59,14 @@ class PageBreakMetrics(Metric):
 
         batch_size = preds.shape[0]
         
-        # 1. Find peaks in parallel for the whole batch
+        # Find peaks in parallel for the whole batch
         pred_mask = self._find_peaks_torch(preds)
         
         # Ground truth peaks (GT usually is binary, but let's be safe)
         # We can treat non-zero GT as peaks, or use the same finder if GT is fuzzy
         true_mask = self._find_peaks_torch(target) if target.dtype.is_floating_point else (target > 0.5)
 
-        # 2. Iterate batch (cheap on GPU for small batch sizes) 
+        # Iterate batch (cheap on GPU for small batch sizes) 
         # Vectorizing the matching logic across variable numbers of peaks per sample is complex,
         # so we loop over the batch, but use Tensor ops inside.
         for i in range(batch_size):
@@ -86,7 +84,7 @@ class PageBreakMetrics(Metric):
                 self.fn += n_t
                 continue
 
-            # 3. Distance Matrix: |P - T|
+            # Distance Matrix: |P - T|
             # (N_p, 1) - (1, N_t) -> (N_p, N_t)
             dists = torch.abs(p_indices.unsqueeze(1) - t_indices.unsqueeze(0))
             

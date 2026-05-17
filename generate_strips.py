@@ -81,7 +81,6 @@ def process_chapter(cbz_path: str, output_base: Path) -> None:
             loaded_imgs = []
             widths = []
 
-            # 1. Load and Filter
             for f in img_files:
                 img = load_image_from_cbz(z, f)
                 if img is None:
@@ -99,7 +98,6 @@ def process_chapter(cbz_path: str, output_base: Path) -> None:
             if not loaded_imgs:
                 return
 
-            # 2. Normalize Width
             target_width = int(np.median(widths))
 
             current_strip = []
@@ -108,7 +106,6 @@ def process_chapter(cbz_path: str, output_base: Path) -> None:
             strip_counter = 0
             cbz_name = Path(cbz_path).stem
 
-            # 3. Build Strips
             for img in loaded_imgs:
                 h, w = img.shape[:2]
 
@@ -163,7 +160,6 @@ def main():
         print(f"Error: Source directory {source} does not exist.")
         return
 
-    # 1. Discovery & Grouping
     print("Scanning for series...")
     all_cbzs = list(source.rglob('*.cbz'))
 
@@ -184,7 +180,6 @@ def main():
     total_series = len(series_names)
     print(f"Found {len(all_cbzs)} files across {total_series} unique series.")
 
-    # 2. Split by SERIES
     train_end = int(total_series * TRAIN_RATIO)
     val_end = train_end + int(total_series * VAL_RATIO)
 
@@ -204,7 +199,6 @@ def main():
     print(
         f"Split (Files):  Train={len(splits['train'])}, Val={len(splits['val'])}, Test={len(splits['test'])}")
 
-    # 3. Process
     for split_name, files in splits.items():
         split_dir = root_out / split_name
         (split_dir / "images").mkdir(parents=True, exist_ok=True)
