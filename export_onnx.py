@@ -56,20 +56,13 @@ def export_model(args: argparse.Namespace) -> None:
     x = torch.randn(1, 3, 2048, 768)
     
     wrapper = OnnxWrapper(model)
+    wrapper.eval()
     
     print(f"[Info] Exporting to {args.output}...")
     
-    # We use opset_version 17 to ensure support for operators like MaxPool1d/Conv1d with dynamic shapes
-    # We disable dynamo to avoid strict constraint violations with dynamic shapes in this specific model architecture
-    
-    # Prepare dynamic shapes for dynamo export
-    from torch.export import Dim
-    batch_dim = Dim("batch_size", min=1)
-    height_dim = Dim("height", min=384) # Minimum height to support convolutions
-    
-    # Input x is (Batch, 3, Height, 768)
-    dynamic_shapes = ({0: batch_dim, 2: height_dim},)
-
+    # We use opset_version 17+ for stable MaxPool1d/Conv1d with dynamic shapes.
+    # We explicitly set dynamo=False to use the stable TorchScript exporter, 
+    # avoiding dependency bugs in the experimental Dynamo-based exporter.
     torch.onnx.export(
         wrapper,
         (x,),
@@ -79,8 +72,12 @@ def export_model(args: argparse.Namespace) -> None:
         do_constant_folding=True,
         input_names=['input'],
         output_names=['probabilities', 'peak_mask'],
-        dynamo=True,
-        dynamic_shapes=dynamic_shapes
+        dynamo=False,
+        dynamic_axes={
+            'input': {0: 'batch_size', 2: 'height'},
+            'probabilities': {0: 'batch_size', 1: 'height'},
+            'peak_mask': {0: 'batch_size', 1: 'height'}
+        }
     )
     print("[Success] Export complete.")
 

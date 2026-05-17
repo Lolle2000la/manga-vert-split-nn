@@ -221,7 +221,7 @@ class DeepPageBreakDetector(nn.Module):
         Used during training.
         """
         x = self.features(x)     
-        x = self.width_pool(x)   
+        x = torch.mean(x, dim=-1, keepdim=True)
         x = self.classifier(x) 
         return x.squeeze(1).squeeze(-1)
 
