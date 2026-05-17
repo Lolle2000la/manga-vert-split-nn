@@ -2,6 +2,10 @@
 
 A specialized deep learning solution for detecting page breaks (splits) in manga when the pages are given in a concatenated format. This project provides a complete pipeline from dataset generation to training, optimization, and deployment-ready inference tools.
 
+| Manga Split Visualized | With Raw Logits |
+|-----------------------|-------------|
+| ![Example of detected splits on a manga strip](assets/manga%20splits%20visualized.png) | ![Logits output showing peaks at split locations](assets/manga%20splits%20visualized%20with%20raw%20logits.png) |
+
 ## Overview
 
 When manga pages are scanned or stored digitally, they are often combined into long vertical strips. Automatically detecting where to split these strips back into individual pages is a non-trivial task, especially when scene transitions are subtle or when there is minimal whitespace between pages.
