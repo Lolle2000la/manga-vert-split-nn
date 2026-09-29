@@ -64,6 +64,31 @@ python detect_breaks.py \
   --image "path/to/strip.jpg"
 ```
 
+#### 3. Resident Detection Server (Python)
+The CLI reloads the model for every image, which dominates the cost when detecting a whole chapter. `detect_server.py` keeps the model resident and speaks newline-delimited JSON (NDJSON) over stdin/stdout — the same pattern as `MangaJaNaiConverterGui`'s `worker.py`. This is what the MangaIngestWithUpscaling remote worker uses to detect pages one at a time without paying a model load per page.
+
+```bash
+python detect_server.py \
+  --checkpoint "models/BCE Only (v8)/final_deployment/best_model.pth" \
+  --config "models/BCE Only (v8)/final_deployment/model_config.json" \
+  --device cuda:0 --idle-cache-release 10
+```
+
+Requests: `detect` (by `path` or base64 `data`), `cancel`, `release_cache`, `ping`, `shutdown`.
+Events: `ready`, `result`, `error`, `cancelled`, `cache_released`, `pong`, `exited`.
+`release_cache` (and `--idle-cache-release`) return cached VRAM to the driver so a co-tenant upscaler can use the GPU while the detector stays warm.
+
+The detection logic itself lives in `page_break_detector.py` (`PageBreakDetector`, `resolve_parameters`, `predict_sliding_window`), which both the CLI and the server share and which is unit-tested with an injectable model.
+
+### Tests
+
+```bash
+uv sync --dev
+uv run pytest
+```
+
+The real-checkpoint tests are skipped automatically when the model files are not present.
+
 ## Model Variants
 
 During development, two main training strategies were explored:
