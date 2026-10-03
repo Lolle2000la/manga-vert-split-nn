@@ -97,6 +97,11 @@ class DetectionServer:
             self.emit({"type": "error", "id": None, "message": "cancel requires an id"})
             return
         with self._state_lock:
+            # A cancel for a job that never runs (a stale or duplicated id) would otherwise
+            # accumulate for the server's lifetime; bound the set. A legitimate pending cancel is
+            # only dropped once thousands are outstanding, which cannot happen for a single client.
+            if len(self._cancelled) >= 1024:
+                self._cancelled.clear()
             self._cancelled.add(job_id)
         self.emit({"type": "cancelled", "id": job_id})
 
