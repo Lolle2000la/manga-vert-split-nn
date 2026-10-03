@@ -34,7 +34,9 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -335,11 +337,60 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.0,
         help="Seconds of idleness after which cached VRAM is returned to the driver (0 disables).",
     )
+    parser.add_argument(
+        "--parent-pid",
+        type=int,
+        default=None,
+        help=(
+            "Exit when this parent process dies, so an abruptly killed driver does not "
+            "leave a warm model resident on the GPU."
+        ),
+    )
     return parser
+
+
+def _die_with_parent(parent_pid: int | None) -> None:
+    """Exit when the parent process dies.
+
+    A driver that is SIGKILLed would otherwise reparent this server, which keeps the model (and its
+    GPU memory) resident indefinitely. On Linux, ``PR_SET_PDEATHSIG`` asks the kernel to SIGKILL us
+    when the parent dies, even if our stdin stays open because another process inherited the pipe.
+    Elsewhere, a daemon thread polls the parent pid. ``parent_pid`` guards against the process having
+    already been reparented before the check ran.
+    """
+    if parent_pid is None:
+        return
+
+    if os.getppid() != parent_pid:
+        os._exit(1)
+
+    if sys.platform.startswith("linux"):
+        try:
+            import ctypes
+
+            libc = ctypes.CDLL("libc.so.6", use_errno=True)
+            pr_set_pdeathsig = 1
+            if libc.prctl(pr_set_pdeathsig, signal.SIGKILL) == 0:
+                # The parent may have died between the getppid check and the prctl call.
+                if os.getppid() != parent_pid:
+                    os._exit(1)
+                return
+        except Exception:  # noqa: BLE001 - fall back to polling
+            pass
+
+    def watch() -> None:
+        while True:
+            time.sleep(1.0)
+            if os.getppid() != parent_pid:
+                os._exit(1)
+
+    threading.Thread(target=watch, daemon=True).start()
 
 
 def main(argv: Iterable[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+
+    _die_with_parent(args.parent_pid)
 
     overrides = {
         "peak_height": args.peak_height,
